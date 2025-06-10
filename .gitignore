@@ -1,0 +1,21 @@
+# node
+node_modules/
+npm-debug.log
+.env
+
+# expo
+.expo/
+.expo-shared/
+
+# VSCode
+.vscode/
+
+# sistema operativo
+.DS_Store
+Thumbs.db
+
+# otras
+*.log
+.idea/
+android/
+ios/
