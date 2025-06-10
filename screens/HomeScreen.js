@@ -13,6 +13,10 @@ export default function HomeScreen({ navigation }) {
         title="Ver respuestas guardadas"
         onPress={() => navigation.navigate('Respuestas')}
       />
+      <Button
+        title="Generar PDF"
+        onPress={() => navigation.navigate('ExportarPDF')}
+      />
     </View>
   );
 }

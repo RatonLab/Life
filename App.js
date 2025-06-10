@@ -6,6 +6,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuestionsScreen from './screens/QuestionsScreen';
 import RespuestasScreen from './screens/RespuestasScreen';
+import ExportarPDFScreen from './screens/ExportarPDFScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Questions" component={QuestionsScreen} />
         <Stack.Screen name="Respuestas" component={RespuestasScreen} />
+        <Stack.Screen name="ExportarPDF" component={ExportarPDFScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
