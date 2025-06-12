@@ -1,85 +1,114 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Button, Alert } from 'react-native';
-import * as Speech from 'expo-speech';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig';
 
-const questions = [
-  "¿Cuál es tu primer recuerdo feliz?",
-  "¿Qué persona te marcó en la infancia?",
-  "¿Qué sueño te acompañaba cuando eras niña/o?"
-];
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { db } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { getAuth } from 'firebase/auth';
+import preguntasPorEtapa from '../utils/preguntasPorEtapa';
 
-export default function QuestionsScreen({ navigation }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answer, setAnswer] = useState("");
+export default function QuestionsScreen() {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { etapa } = route.params || {};
+  const auth = getAuth();
+  const user = auth.currentUser;
+  const [preguntas, setPreguntas] = useState([]);
+  const [respuestas, setRespuestas] = useState({});
 
-  const currentQuestion = questions[currentIndex];
-  const wordCount = answer.trim().split(/\s+/).filter(Boolean).length;
+  if (!etapa) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.error}>
+          ❗ Error: No se recibió la etapa correctamente. Por favor, vuelve atrás e intenta de nuevo.
+        </Text>
+      </View>
+    );
+  }
 
-  const speakQuestion = () => {
-    Speech.speak(currentQuestion);
-  };
+  useEffect(() => {
+    if (preguntasPorEtapa[etapa]) {
+      setPreguntas(preguntasPorEtapa[etapa]);
+    }
+  }, [etapa]);
 
   const handleSave = async () => {
-    const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "Usuario no autenticado");
+      Alert.alert('Error', 'Usuario no autenticado. Por favor inicia sesión.');
       return;
     }
 
     try {
-      await addDoc(collection(db, "respuestas"), {
-        pregunta: currentQuestion,
-        respuesta: answer,
-        estado: answer.trim() === "" ? "pendiente" : "respondida",
-        uid: user.uid,
-        timestamp: serverTimestamp(),
-        etapa: "inicial"
+      const docRef = doc(db, 'respuestas', `${user.uid}_${etapa}`);
+      await setDoc(docRef, {
+        userId: user.uid,
+        etapa,
+        respuestas
       });
+      navigation.navigate('SeleccionarSeccion');
     } catch (error) {
-      Alert.alert("Error al guardar", error.message);
-    }
-  };
-
-  const handleNext = async () => {
-    await handleSave();
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setAnswer("");
-    } else {
-      Alert.alert("¡Gracias!", "Has completado todas las preguntas.");
-      navigation.navigate("Home");
+      console.error('Error guardando respuestas:', error);
+      Alert.alert('Error', 'No se pudieron guardar las respuestas. Intenta nuevamente.');
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.question}>{currentQuestion}</Text>
-      <Button title="🔊 Escuchar pregunta" onPress={speakQuestion} />
-      <TextInput
-        style={styles.input}
-        placeholder="Escribe tu respuesta aquí..."
-        value={answer}
-        multiline
-        onChangeText={setAnswer}
-      />
-      <Text style={styles.counter}>Palabras: {wordCount}</Text>
-      <Button title="Siguiente" onPress={handleNext} />
-    </View>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Preguntas: {etapa}</Text>
+      {preguntas.map((pregunta, index) => (
+        <View key={index} style={styles.preguntaContainer}>
+          <Text style={styles.pregunta}>{pregunta}</Text>
+          <TextInput
+            style={styles.input}
+            multiline
+            numberOfLines={4}
+            onChangeText={(text) =>
+              setRespuestas({ ...respuestas, [pregunta]: text })
+            }
+            value={respuestas[pregunta] || ''}
+            placeholder="Escribe tu respuesta..."
+          />
+        </View>
+      ))}
+      <Button title="Guardar respuestas" onPress={handleSave} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  question: { fontSize: 20, marginBottom: 10 },
+  container: {
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  preguntaContainer: {
+    marginBottom: 20,
+  },
+  pregunta: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    padding: 10,
-    height: 150,
+    borderRadius: 6,
+    padding: 8,
     textAlignVertical: 'top',
-    marginBottom: 10
+    backgroundColor: '#fafafa',
   },
-  counter: { textAlign: 'right', marginBottom: 10 }
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  error: {
+    fontSize: 18,
+    color: 'red',
+    textAlign: 'center'
+  }
 });

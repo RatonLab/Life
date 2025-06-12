@@ -5,9 +5,10 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text>Bienvenida a 'Mi vida en palabras'</Text>
+
       <Button
         title="Comenzar preguntas"
-        onPress={() => navigation.navigate('Questions')}
+        onPress={() => navigation.navigate('SeleccionarSeccion')}
       />
       <Button
         title="Ver respuestas guardadas"
@@ -16,6 +17,10 @@ export default function HomeScreen({ navigation }) {
       <Button
         title="Generar PDF"
         onPress={() => navigation.navigate('ExportarPDF')}
+      />
+      <Button
+        title="Agregar fotos por sección"
+        onPress={() => navigation.navigate('FotosPorSeccion')}
       />
     </View>
   );
