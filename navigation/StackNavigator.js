@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -16,14 +15,46 @@ const Stack = createNativeStackNavigator();
 export default function StackNavigator() {
   return (
     <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="SeleccionarSeccion" component={SeleccionarSeccionScreen} options={{ title: 'Etapas de tu vida' }} />
-      <Stack.Screen name="QuestionsScreen" component={QuestionsScreen} options={{ title: 'Tu historia' }} />
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Respuestas" component={RespuestasScreen} />
-      <Stack.Screen name="ExportarPDF" component={ExportarPDFScreen} />
-      <Stack.Screen name="FotosPorSeccion" component={FotosPorSeccionScreen} />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SeleccionarSeccion"
+        component={SeleccionarSeccionScreen}
+        options={{ title: 'Etapas de tu vida' }}
+      />
+      <Stack.Screen
+        name="QuestionsScreen"
+        component={QuestionsScreen}
+        options={{ title: 'Tu historia' }}
+      />
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: 'Inicio' }}
+      />
+      <Stack.Screen
+        name="Respuestas"
+        component={RespuestasScreen}
+        options={{ title: 'Respuestas Guardadas' }}
+      />
+      <Stack.Screen
+        name="ExportarPDF"
+        component={ExportarPDFScreen}
+        options={{ title: 'Exportar libro' }}
+      />
+      <Stack.Screen
+        name="FotosPorSeccion"
+        component={FotosPorSeccionScreen}
+        options={{ title: 'Tus fotos por etapa' }}
+      />
     </Stack.Navigator>
   );
 }

@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { db } from '../firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
 import preguntasPorEtapa from '../utils/preguntasPorEtapa';
+import { guardarRespuesta } from '../firebase/respuestas'; // IMPORTANTE
 
 export default function QuestionsScreen() {
   const route = useRoute();
@@ -39,16 +37,16 @@ export default function QuestionsScreen() {
     }
 
     try {
-      const docRef = doc(db, 'respuestas', `${user.uid}_${etapa}`);
-      await setDoc(docRef, {
-        userId: user.uid,
-        etapa,
-        respuestas
-      });
+      for (const [pregunta, respuestaTexto] of Object.entries(respuestas)) {
+        const estado = respuestaTexto.trim().length > 0 ? "respondida" : "omitida";
+        await guardarRespuesta(etapa, pregunta, respuestaTexto, estado);
+      }
+
+      Alert.alert("✅ Respuestas guardadas", "Tus respuestas fueron registradas correctamente.");
       navigation.navigate('SeleccionarSeccion');
     } catch (error) {
-      console.error('Error guardando respuestas:', error);
-      Alert.alert('Error', 'No se pudieron guardar las respuestas. Intenta nuevamente.');
+      console.error("Error guardando respuestas:", error);
+      Alert.alert("Error", "No se pudieron guardar las respuestas.");
     }
   };
 

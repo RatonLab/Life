@@ -1,109 +1,110 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator
+} from 'react-native';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
 export default function RespuestasScreen() {
   const [respuestas, setRespuestas] = useState([]);
-  const [editandoId, setEditandoId] = useState(null);
-  const [textoEditado, setTextoEditado] = useState('');
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const obtenerRespuestas = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
+    const cargarRespuestas = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Usuario no autenticado');
 
-      const q = query(collection(db, 'respuestas'), where('uid', '==', user.uid));
-      const querySnapshot = await getDocs(q);
+        const q = query(
+          collection(db, 'respuestas'),
+          where('usuarioId', '==', user.uid),
+          where('estado', '==', 'respondida')
+        );
 
-      const datos = [];
-      querySnapshot.forEach((doc) => {
-        datos.push({ id: doc.id, ...doc.data() });
-      });
+        const querySnapshot = await getDocs(q);
+        const respuestasObtenidas = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      setRespuestas(datos);
+        setRespuestas(respuestasObtenidas);
+      } catch (error) {
+        console.error('Error al cargar respuestas:', error);
+      } finally {
+        setCargando(false);
+      }
     };
 
-    obtenerRespuestas();
+    cargarRespuestas();
   }, []);
 
-  const comenzarEdicion = (item) => {
-    setEditandoId(item.id);
-    setTextoEditado(item.respuesta);
-  };
+  if (cargando) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#000" />
+        <Text>Cargando respuestas guardadas...</Text>
+      </View>
+    );
+  }
 
-  const guardarCambios = async (id) => {
-    try {
-      const ref = doc(db, 'respuestas', id);
-      await updateDoc(ref, {
-        respuesta: textoEditado,
-        estado: textoEditado.trim() === '' ? 'pendiente' : 'respondida',
-      });
-
-      setRespuestas((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, respuesta: textoEditado } : item
-        )
-      );
-
-      setEditandoId(null);
-      setTextoEditado('');
-    } catch (error) {
-      Alert.alert('Error al guardar', error.message);
-    }
-  };
+  if (respuestas.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text>No hay respuestas guardadas aún.</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={respuestas}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text style={styles.pregunta}>{item.pregunta}</Text>
-            {editandoId === item.id ? (
-              <>
-                <TextInput
-                  style={styles.input}
-                  multiline
-                  value={textoEditado}
-                  onChangeText={setTextoEditado}
-                />
-                <Button title="Guardar" onPress={() => guardarCambios(item.id)} />
-              </>
-            ) : (
-              <>
-                <Text style={styles.respuesta}>{item.respuesta || '(Sin respuesta)'}</Text>
-                <Text style={styles.estado}>Estado: {item.estado}</Text>
-                <Button title="Editar" onPress={() => comenzarEdicion(item)} />
-              </>
-            )}
-          </View>
-        )}
-      />
-    </View>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>📖 Respuestas Guardadas</Text>
+      {respuestas.map((resp, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.etapa}>Etapa: {resp.etapa}</Text>
+          <Text style={styles.pregunta}>📝 {resp.preguntaId}</Text>
+          <Text style={styles.respuesta}>{resp.textoRespuesta}</Text>
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  item: {
-    marginBottom: 20,
-    padding: 15,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 8,
-  },
-  pregunta: { fontWeight: 'bold', marginBottom: 5 },
-  respuesta: { marginBottom: 5 },
-  estado: { fontStyle: 'italic', marginBottom: 5 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
+  container: {
+    padding: 16,
     backgroundColor: '#fff',
-    borderRadius: 5,
-    minHeight: 80,
-    textAlignVertical: 'top',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#f3f3f3',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    elevation: 2,
+  },
+  etapa: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  pregunta: {
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  respuesta: {
+    color: '#333',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
