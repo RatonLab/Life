@@ -1,54 +1,54 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { estilosBase } from '../styles/theme';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bienvenida a "Mi vida en palabras"</Text>
+    <ScrollView contentContainerStyle={styles.wrapper}>
+      <View style={estilosBase.contenedor}>
+        <Text style={estilosBase.titulo}>Bienvenida a "Mi vida en palabras"</Text>
+        <Text style={estilosBase.subtitulo}>
+          Una app para escribir tu historia con amor, memoria y emoción. ¿Por dónde quieres empezar?
+        </Text>
 
-      <Button
-        title="Comenzar preguntas"
-        onPress={() => navigation.navigate('SeleccionarSeccion')}
-      />
-      <View style={styles.spacer} />
+        <TouchableOpacity
+          style={estilosBase.boton}
+          onPress={() => navigation.navigate('SeleccionarSeccion')}
+        >
+          <Text style={estilosBase.botonTexto}>✍️ Comenzar preguntas</Text>
+        </TouchableOpacity>
 
-      <Button
-        title="Ver respuestas guardadas"
-        onPress={() => navigation.navigate('Respuestas')}
-      />
-      <View style={styles.spacer} />
+        <TouchableOpacity
+          style={estilosBase.boton}
+          onPress={() => navigation.navigate('Respuestas')}
+        >
+          <Text style={estilosBase.botonTexto}>📖 Ver respuestas guardadas</Text>
+        </TouchableOpacity>
 
-      <Button
-        title="Subir fotos por etapa"
-        onPress={() => navigation.navigate('FotosPorSeccion')}
-      />
-      <View style={styles.spacer} />
+        <TouchableOpacity
+          style={estilosBase.boton}
+          onPress={() => navigation.navigate('FotosPorSeccion')}
+        >
+          <Text style={estilosBase.botonTexto}>🖼️ Subir fotos por etapa</Text>
+        </TouchableOpacity>
 
-      <Button
-        title="Exportar libro en PDF"
-        onPress={() => navigation.navigate('ExportarPDF')}
-      />
-    </View>
+        <TouchableOpacity
+          style={estilosBase.boton}
+          onPress={() => navigation.navigate('ExportarPDF')}
+        >
+          <Text style={estilosBase.botonTexto}>📄 Exportar libro en PDF</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  wrapper: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 20,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  spacer: {
-    height: 16,
   },
 });

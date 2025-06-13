@@ -4,10 +4,11 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+import { estilosBase, colores } from '../styles/theme';
 
 export default function RespuestasScreen() {
   const [respuestas, setRespuestas] = useState([]);
@@ -44,27 +45,29 @@ export default function RespuestasScreen() {
 
   if (cargando) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text>Cargando respuestas guardadas...</Text>
+      <View style={estilosBase.contenedor}>
+        <ActivityIndicator size="large" color={colores.secundario} />
+        <Text style={estilosBase.texto}>Cargando respuestas guardadas...</Text>
       </View>
     );
   }
 
   if (respuestas.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text>No hay respuestas guardadas aún.</Text>
+      <View style={estilosBase.contenedor}>
+        <Text style={estilosBase.titulo}>📭 Aún no hay respuestas guardadas</Text>
+        <Text style={estilosBase.subtitulo}>Comienza a escribir tu historia…</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>📖 Respuestas Guardadas</Text>
+    <ScrollView style={estilosBase.contenedor}>
+      <Text style={estilosBase.titulo}>📖 Respuestas Guardadas</Text>
+
       {respuestas.map((resp, index) => (
         <View key={index} style={styles.card}>
-          <Text style={styles.etapa}>Etapa: {resp.etapa}</Text>
+          <Text style={styles.etapa}>🕰️ Etapa: {resp.etapa}</Text>
           <Text style={styles.pregunta}>📝 {resp.preguntaId}</Text>
           <Text style={styles.respuesta}>{resp.textoRespuesta}</Text>
         </View>
@@ -74,37 +77,30 @@ export default function RespuestasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
   card: {
-    backgroundColor: '#f3f3f3',
-    padding: 12,
+    backgroundColor: '#ffffff',
     borderRadius: 10,
+    padding: 12,
     marginBottom: 16,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    elevation: 1,
   },
   etapa: {
+    fontSize: 14,
     fontWeight: 'bold',
+    color: colores.secundario,
     marginBottom: 4,
   },
   pregunta: {
+    fontSize: 15,
     fontStyle: 'italic',
-    marginBottom: 4,
+    color: colores.texto,
+    marginBottom: 6,
   },
   respuesta: {
-    color: '#333',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontSize: 16,
+    color: colores.texto,
+    lineHeight: 22,
   },
 });

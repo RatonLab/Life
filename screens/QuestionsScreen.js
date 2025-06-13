@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getAuth } from 'firebase/auth';
 import preguntasPorEtapa from '../utils/preguntasPorEtapa';
-import { guardarRespuesta } from '../firebase/respuestas'; // IMPORTANTE
+import { guardarRespuesta } from '../firebase/respuestas';
+import { estilosBase, colores } from '../styles/theme';
 
 export default function QuestionsScreen() {
   const route = useRoute();
@@ -16,9 +25,10 @@ export default function QuestionsScreen() {
 
   if (!etapa) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>
-          ❗ Error: No se recibió la etapa correctamente. Por favor, vuelve atrás e intenta de nuevo.
+      <View style={estilosBase.contenedor}>
+        <Text style={estilosBase.titulo}>❗ Etapa no recibida</Text>
+        <Text style={estilosBase.texto}>
+          Por favor, vuelve atrás e intenta de nuevo.
         </Text>
       </View>
     );
@@ -38,75 +48,63 @@ export default function QuestionsScreen() {
 
     try {
       for (const [pregunta, respuestaTexto] of Object.entries(respuestas)) {
-        const estado = respuestaTexto.trim().length > 0 ? "respondida" : "omitida";
+        const estado =
+          respuestaTexto.trim().length > 0 ? 'respondida' : 'omitida';
         await guardarRespuesta(etapa, pregunta, respuestaTexto, estado);
       }
 
-      Alert.alert("✅ Respuestas guardadas", "Tus respuestas fueron registradas correctamente.");
+      Alert.alert(
+        '✅ Respuestas guardadas',
+        'Tus respuestas fueron registradas correctamente.'
+      );
       navigation.navigate('SeleccionarSeccion');
     } catch (error) {
-      console.error("Error guardando respuestas:", error);
-      Alert.alert("Error", "No se pudieron guardar las respuestas.");
+      console.error('Error guardando respuestas:', error);
+      Alert.alert(
+        'Error',
+        'No se pudieron guardar las respuestas. Intenta nuevamente.'
+      );
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Preguntas: {etapa}</Text>
+    <ScrollView style={estilosBase.contenedor}>
+      <Text style={estilosBase.titulo}>Preguntas de la etapa: {etapa}</Text>
+
       {preguntas.map((pregunta, index) => (
         <View key={index} style={styles.preguntaContainer}>
-          <Text style={styles.pregunta}>{pregunta}</Text>
+          <Text style={estilosBase.texto}>{pregunta}</Text>
           <TextInput
             style={styles.input}
             multiline
-            numberOfLines={4}
+            numberOfLines={6}
+            placeholder="Escribe tu respuesta..."
             onChangeText={(text) =>
               setRespuestas({ ...respuestas, [pregunta]: text })
             }
             value={respuestas[pregunta] || ''}
-            placeholder="Escribe tu respuesta..."
           />
         </View>
       ))}
-      <Button title="Guardar respuestas" onPress={handleSave} />
+
+      <TouchableOpacity style={estilosBase.boton} onPress={handleSave}>
+        <Text style={estilosBase.botonTexto}>💾 Guardar respuestas</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
   preguntaContainer: {
     marginBottom: 20,
   },
-  pregunta: {
-    fontSize: 16,
-    marginBottom: 6,
-  },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    padding: 8,
+    borderColor: colores.borde,
+    borderRadius: 8,
+    padding: 10,
     textAlignVertical: 'top',
-    backgroundColor: '#fafafa',
+    backgroundColor: '#fff',
+    marginTop: 8,
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20
-  },
-  error: {
-    fontSize: 18,
-    color: 'red',
-    textAlign: 'center'
-  }
 });
