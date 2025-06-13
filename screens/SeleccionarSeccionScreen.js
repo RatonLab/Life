@@ -1,9 +1,14 @@
-
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { getAuth } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Image,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { colores, estilosBase } from '../styles/theme';
 
 const etapas = [
   { nombre: 'Infancia', icono: require('../assets/icons/osito.png') },
@@ -11,90 +16,76 @@ const etapas = [
   { nombre: 'Juventud', icono: require('../assets/icons/guitarra.png') },
   { nombre: 'Adulto Joven', icono: require('../assets/icons/trabajo.png') },
   { nombre: 'Adulto Mayor', icono: require('../assets/icons/abuelo.png') },
-  { nombre: 'Mensaje final', icono: require('../assets/icons/corazon.png') },
+  { nombre: 'Mensaje Final', icono: require('../assets/icons/corazon.png') },
 ];
 
-export default function SeleccionarSeccionScreen({ navigation }) {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  const [conteos, setConteos] = useState({});
+export default function SeleccionarSeccionScreen() {
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchConteos = async () => {
-      const nuevosConteos = {};
-      for (const etapa of etapas) {
-        const docRef = doc(db, 'respuestas', `${user.uid}_${etapa.nombre}`);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const respuestas = data.respuestas || {};
-          const respondidas = Object.values(respuestas).filter((r) => r && r.trim() !== '').length;
-          nuevosConteos[etapa.nombre] = respondidas;
-        } else {
-          nuevosConteos[etapa.nombre] = 0;
-        }
-      }
-      setConteos(nuevosConteos);
-    };
-
-    fetchConteos();
-  }, []);
+  const irAPreguntas = (etapa) => {
+    navigation.navigate('QuestionsScreen', { etapa });
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Elige una etapa de tu vida</Text>
-      {etapas.map((etapa, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.card}
-          onPress={() => navigation.navigate('QuestionsScreen', { etapa: etapa.nombre })}
-        >
-          <Image source={etapa.icono} style={styles.icono} />
-          <View style={styles.info}>
-            <Text style={styles.nombre}>{etapa.nombre}</Text>
-            <Text style={styles.contador}>{conteos[etapa.nombre] || 0} respondidas</Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+    <View style={styles.contenedor}>
+      <Text style={styles.titulo}>Selecciona una etapa de tu vida</Text>
+
+      <FlatList
+        data={etapas}
+        keyExtractor={(item) => item.nombre}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => irAPreguntas(item.nombre)}
+          >
+            <Image source={item.icono} style={styles.icono} />
+            <Text style={styles.texto}>{item.nombre}</Text>
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={styles.lista}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  contenedor: {
+    ...estilosBase.contenedor,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    paddingTop: 40,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  titulo: {
+    ...estilosBase.titulo,
+    fontSize: 24,
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  lista: {
+    paddingBottom: 20,
   },
   card: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f1f1',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 8,
+    width: 260,
     alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   icono: {
-    width: 50,
-    height: 50,
-    marginRight: 15,
-    resizeMode: 'contain',
+    width: 64,
+    height: 64,
+    marginBottom: 10,
   },
-  info: {
-    flex: 1,
-  },
-  nombre: {
+  texto: {
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  contador: {
-    fontSize: 14,
-    color: '#555',
+    color: colores.texto,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
