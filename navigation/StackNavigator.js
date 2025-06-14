@@ -8,6 +8,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import SeleccionarSeccionScreen from '../screens/SeleccionarSeccionScreen';
 import QuestionsScreen from '../screens/QuestionsScreen';
+import EditarPreguntaScreen from '../screens/EditarPreguntaScreen'; // 🆕 NUEVA PANTALLA
 import RespuestasScreen from '../screens/RespuestasScreen';
 import ExportarPDFScreen from '../screens/ExportarPDFScreen';
 import FotosPorSeccionScreen from '../screens/FotosPorSeccionScreen';
@@ -53,6 +54,11 @@ export default function StackNavigator() {
         name="QuestionsScreen"
         component={QuestionsScreen}
         options={{ title: 'Tu historia' }}
+      />
+      <Stack.Screen
+        name="EditarPreguntaScreen" // 🆕 AÑADIDO
+        component={EditarPreguntaScreen}
+        options={{ title: 'Editar respuesta' }}
       />
 
       {/* Funcionalidades adicionales */}

@@ -2,109 +2,237 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TextInput,
-  TouchableOpacity,
+  Button,
+  ScrollView,
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebaseConfig';
 import preguntasPorEtapa from '../utils/preguntasPorEtapa';
-import { guardarRespuesta } from '../firebase/respuestas';
-import { estilosBase, colores } from '../styles/theme';
 
-export default function QuestionsScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { etapa } = route.params || {};
-  const auth = getAuth();
-  const user = auth.currentUser;
-  const [preguntas, setPreguntas] = useState([]);
+export default function QuestionsScreen({ route }) {
+  const { etapa } = route.params;
+  const uid = auth.currentUser.uid;
+  const db = getFirestore();
+
+  const preguntas = preguntasPorEtapa[etapa] || [];
+
   const [respuestas, setRespuestas] = useState({});
+  const [estados, setEstados] = useState({});
+  const [caracteres, setCaracteres] = useState({});
 
-  if (!etapa) {
-    return (
-      <View style={estilosBase.contenedor}>
-        <Text style={estilosBase.titulo}>❗ Etapa no recibida</Text>
-        <Text style={estilosBase.texto}>
-          Por favor, vuelve atrás e intenta de nuevo.
-        </Text>
-      </View>
-    );
-  }
-
+  // Cargar respuestas previas
   useEffect(() => {
-    if (preguntasPorEtapa[etapa]) {
-      setPreguntas(preguntasPorEtapa[etapa]);
-    }
-  }, [etapa]);
+    const cargarRespuestasGuardadas = async () => {
+      let nuevasRespuestas = {};
+      let nuevosEstados = {};
+      let nuevosCaracteres = {};
 
-  const handleSave = async () => {
-    if (!user) {
-      Alert.alert('Error', 'Usuario no autenticado. Por favor inicia sesión.');
+      for (const preg of preguntas) {
+        const docId = `${uid}_${etapa}_${preg}`;
+        const ref = doc(db, 'respuestas', docId);
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          const data = snap.data();
+          const texto = data.textoRespuesta || '';
+          nuevasRespuestas[preg] = texto;
+          nuevosCaracteres[preg] = texto.length;
+          nuevosEstados[preg] = data.estado === 'omitida' ? '❌ Omitida' : '✅ Respondida';
+        } else {
+          nuevosEstados[preg] = '⏳ Pendiente';
+        }
+      }
+
+      setRespuestas(nuevasRespuestas);
+      setEstados(nuevosEstados);
+      setCaracteres(nuevosCaracteres);
+    };
+
+    cargarRespuestasGuardadas();
+  }, []);
+
+  const handleChange = (pregunta, texto) => {
+    setRespuestas((prev) => ({ ...prev, [pregunta]: texto }));
+    setCaracteres((prev) => ({ ...prev, [pregunta]: texto.length }));
+
+    if (texto.trim().length > 0) {
+      setEstados((prev) => ({ ...prev, [pregunta]: '✅ Respondida' }));
+    } else {
+      setEstados((prev) => ({ ...prev, [pregunta]: '⏳ Pendiente' }));
+    }
+  };
+
+  const guardar = async (pregunta) => {
+    const texto = respuestas[pregunta]?.trim();
+    if (!texto) {
+      Alert.alert('❌ Respuesta vacía', 'Por favor escribe algo o marca como omitida.');
       return;
     }
 
+    const docId = `${uid}_${etapa}_${pregunta}`;
     try {
-      for (const [pregunta, respuestaTexto] of Object.entries(respuestas)) {
-        const estado =
-          respuestaTexto.trim().length > 0 ? 'respondida' : 'omitida';
-        await guardarRespuesta(etapa, pregunta, respuestaTexto, estado);
-      }
-
-      Alert.alert(
-        '✅ Respuestas guardadas',
-        'Tus respuestas fueron registradas correctamente.'
-      );
-      navigation.navigate('SeleccionarSeccion');
+      await setDoc(doc(db, 'respuestas', docId), {
+        usuarioID: uid,
+        etapa,
+        preguntaId: pregunta,
+        textoRespuesta: texto,
+        estado: 'respondida',
+        fechaModificacion: new Date().toISOString(),
+      });
+      setEstados((prev) => ({ ...prev, [pregunta]: '✅ Respondida' }));
+      Alert.alert('✅ Guardado', 'Tu respuesta fue guardada.');
     } catch (error) {
-      console.error('Error guardando respuestas:', error);
-      Alert.alert(
-        'Error',
-        'No se pudieron guardar las respuestas. Intenta nuevamente.'
-      );
+      console.error('Error al guardar:', error);
+      Alert.alert('Error', 'No se pudo guardar la respuesta.');
+    }
+  };
+
+  const omitir = async (pregunta) => {
+    const docId = `${uid}_${etapa}_${pregunta}`;
+    try {
+      await setDoc(doc(db, 'respuestas', docId), {
+        usuarioID: uid,
+        etapa,
+        preguntaId: pregunta,
+        textoRespuesta: '',
+        estado: 'omitida',
+        fechaModificacion: new Date().toISOString(),
+      });
+      setRespuestas((prev) => ({ ...prev, [pregunta]: '' }));
+      setEstados((prev) => ({ ...prev, [pregunta]: '❌ Omitida' }));
+      setCaracteres((prev) => ({ ...prev, [pregunta]: 0 }));
+      Alert.alert('❌ Pregunta omitida');
+    } catch (error) {
+      console.error('Error al omitir:', error);
+      Alert.alert('Error', 'No se pudo omitir la pregunta.');
     }
   };
 
   return (
-    <ScrollView style={estilosBase.contenedor}>
-      <Text style={estilosBase.titulo}>Preguntas de la etapa: {etapa}</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.etapaTitulo}>🧸 Etapa: {etapa}</Text>
+      </View>
 
       {preguntas.map((pregunta, index) => (
-        <View key={index} style={styles.preguntaContainer}>
-          <Text style={estilosBase.texto}>{pregunta}</Text>
+        <View key={index} style={styles.card}>
+          <Text style={styles.pregunta}>{pregunta}</Text>
+
+          <Text
+            style={[
+              styles.estado,
+              {
+                color:
+                  estados[pregunta] === '✅ Respondida'
+                    ? 'green'
+                    : estados[pregunta] === '❌ Omitida'
+                    ? 'red'
+                    : '#888',
+              },
+            ]}
+          >
+            {estados[pregunta] || '⏳ Pendiente'}
+          </Text>
+
           <TextInput
-            style={styles.input}
             multiline
             numberOfLines={6}
-            placeholder="Escribe tu respuesta..."
-            onChangeText={(text) =>
-              setRespuestas({ ...respuestas, [pregunta]: text })
-            }
+            style={styles.input}
+            placeholder="Escribe tu respuesta con calma..."
             value={respuestas[pregunta] || ''}
+            onChangeText={(texto) => handleChange(pregunta, texto)}
+            textAlignVertical="top"
+            maxLength={8000}
           />
+
+          <Text style={styles.contador}>
+            {caracteres[pregunta] || 0} / 8000 caracteres
+          </Text>
+
+          <View style={styles.botones}>
+            <Button
+              title="Guardar respuesta"
+              onPress={() => guardar(pregunta)}
+              color="#007AFF"
+            />
+            <View style={{ height: 8 }} />
+            <Button
+              title="Omitir pregunta"
+              color="#FF3B30"
+              onPress={() =>
+                Alert.alert(
+                  '¿Omitir esta pregunta?',
+                  'Esto marcará la pregunta como omitida.',
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Omitir', style: 'destructive', onPress: () => omitir(pregunta) },
+                  ]
+                )
+              }
+            />
+          </View>
         </View>
       ))}
-
-      <TouchableOpacity style={estilosBase.boton} onPress={handleSave}>
-        <Text style={estilosBase.botonTexto}>💾 Guardar respuestas</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  preguntaContainer: {
+  container: {
+    padding: 16,
+    backgroundColor: '#F9F9F9',
+  },
+  header: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#EDEDED',
+    borderRadius: 10,
+  },
+  etapaTitulo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  pregunta: {
+    fontSize: 17,
+    marginBottom: 6,
+    color: '#333',
+    fontWeight: '600',
   },
   input: {
+    borderColor: '#ccc',
     borderWidth: 1,
-    borderColor: colores.borde,
-    borderRadius: 8,
-    padding: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
     textAlignVertical: 'top',
-    backgroundColor: '#fff',
-    marginTop: 8,
+  },
+  contador: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  estado: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  botones: {
+    marginTop: 6,
   },
 });

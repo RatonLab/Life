@@ -5,14 +5,17 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Button,
 } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+import { useNavigation } from '@react-navigation/native';
 import { estilosBase, colores } from '../styles/theme';
 
 export default function RespuestasScreen() {
   const [respuestas, setRespuestas] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const cargarRespuestas = async () => {
@@ -22,7 +25,7 @@ export default function RespuestasScreen() {
 
         const q = query(
           collection(db, 'respuestas'),
-          where('usuarioId', '==', user.uid),
+          where('usuarioID', '==', user.uid),
           where('estado', '==', 'respondida')
         );
 
@@ -70,6 +73,19 @@ export default function RespuestasScreen() {
           <Text style={styles.etapa}>🕰️ Etapa: {resp.etapa}</Text>
           <Text style={styles.pregunta}>📝 {resp.preguntaId}</Text>
           <Text style={styles.respuesta}>{resp.textoRespuesta}</Text>
+
+          <Button
+            title="Editar"
+            onPress={() =>
+              navigation.navigate('EditarPreguntaScreen', {
+                pregunta: resp.preguntaId, // Aquí es donde está guardada la pregunta
+                idPregunta: resp.id, // usamos el ID del documento
+                etapa: resp.etapa,
+                uid: auth.currentUser.uid,
+                respuestaPrevia: resp.textoRespuesta,
+              })
+            }
+          />
         </View>
       ))}
     </ScrollView>
@@ -102,5 +118,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colores.texto,
     lineHeight: 22,
+    marginBottom: 8,
   },
 });
