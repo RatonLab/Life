@@ -1,91 +1,123 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  FlatList,
   StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { colores, estilosBase } from '../styles/theme';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
+import preguntasPorEtapa from '../utils/preguntasPorEtapa';
 
-const etapas = [
-  { nombre: 'Infancia', icono: require('../assets/icons/osito.png') },
-  { nombre: 'Adolescencia', icono: require('../assets/icons/adolescencia.png') },
-  { nombre: 'Juventud', icono: require('../assets/icons/guitarra.png') },
-  { nombre: 'Adulto Joven', icono: require('../assets/icons/trabajo.png') },
-  { nombre: 'Adulto Mayor', icono: require('../assets/icons/abuelo.png') },
-  { nombre: 'Mensaje Final', icono: require('../assets/icons/corazon.png') },
-];
+const imagenesEtapa = {
+  Infancia: require('../assets/icons/osito.png'),
+  Adolescencia: require('../assets/icons/mochila.png'),
+  Juventud: require('../assets/icons/guitarra.png'),
+  AdultoJoven: require('../assets/icons/taza.png'),
+  AdultoMayor: require('../assets/icons/abuelo.png'), // Puedes usar 'trabajo.png' si prefieres
+  MensajeFinal: require('../assets/icons/corazon.png'),
+};
 
-export default function SeleccionarSeccionScreen() {
-  const navigation = useNavigation();
+export default function SeleccionarSeccionScreen({ navigation }) {
+  const [progreso, setProgreso] = useState({});
+  const uid = auth.currentUser?.uid;
 
-  const irAPreguntas = (etapa) => {
-    navigation.navigate('QuestionsScreen', { etapa });
-  };
+  useEffect(() => {
+    const cargarProgreso = async () => {
+      const etapas = Object.keys(preguntasPorEtapa);
+      let nuevoProgreso = {};
+
+      for (const etapa of etapas) {
+        const total = preguntasPorEtapa[etapa].length;
+
+        const q = query(
+          collection(db, 'respuestas'),
+          where('usuarioID', '==', uid),
+          where('etapa', '==', etapa),
+          where('estado', '==', 'respondida')
+        );
+
+        const snap = await getDocs(q);
+        const respondidas = snap.size;
+
+        nuevoProgreso[etapa] = {
+          total,
+          respondidas,
+        };
+      }
+
+      setProgreso(nuevoProgreso);
+    };
+
+    if (uid) cargarProgreso();
+  }, []);
 
   return (
-    <View style={styles.contenedor}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.titulo}>Selecciona una etapa de tu vida</Text>
 
-      <FlatList
-        data={etapas}
-        keyExtractor={(item) => item.nombre}
-        renderItem={({ item }) => (
+      {Object.keys(preguntasPorEtapa).map((etapa) => {
+        const img = imagenesEtapa[etapa];
+        const datos = progreso[etapa] || { total: 0, respondidas: 0 };
+
+        return (
           <TouchableOpacity
+            key={etapa}
             style={styles.card}
-            onPress={() => irAPreguntas(item.nombre)}
+            onPress={() => navigation.navigate('QuestionsScreen', { etapa })}
           >
-            <Image source={item.icono} style={styles.icono} />
-            <Text style={styles.texto}>{item.nombre}</Text>
+            <Image source={img} style={styles.imagen} resizeMode="cover" />
+            <Text style={styles.nombreEtapa}>{etapa}</Text>
+            <Text style={styles.progreso}>
+              {datos.respondidas} / {datos.total} respondidas
+            </Text>
           </TouchableOpacity>
-        )}
-        contentContainerStyle={styles.lista}
-      />
-    </View>
+        );
+      })}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedor: {
-    ...estilosBase.contenedor,
+  container: {
+    padding: 20,
+    backgroundColor: '#FFF5EB',
     alignItems: 'center',
-    paddingTop: 40,
   },
   titulo: {
-    ...estilosBase.titulo,
-    fontSize: 24,
+    fontSize: 22,
+    fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: 'center',
-  },
-  lista: {
-    paddingBottom: 20,
+    color: '#333',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    width: 260,
+    width: '90%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginBottom: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
   },
-  icono: {
-    width: 64,
-    height: 64,
-    marginBottom: 10,
+  imagen: {
+    width: 90,
+    height: 90,
+    marginBottom: 12,
+    borderRadius: 12,
   },
-  texto: {
+  nombreEtapa: {
     fontSize: 18,
-    color: colores.texto,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  progreso: {
+    fontSize: 14,
+    color: '#666',
   },
 });

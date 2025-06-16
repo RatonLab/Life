@@ -8,10 +8,11 @@ import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import SeleccionarSeccionScreen from '../screens/SeleccionarSeccionScreen';
 import QuestionsScreen from '../screens/QuestionsScreen';
-import EditarPreguntaScreen from '../screens/EditarPreguntaScreen'; // 🆕 NUEVA PANTALLA
+import EditarPreguntaScreen from '../screens/EditarPreguntaScreen';
 import RespuestasScreen from '../screens/RespuestasScreen';
 import ExportarPDFScreen from '../screens/ExportarPDFScreen';
 import FotosPorSeccionScreen from '../screens/FotosPorSeccionScreen';
+import DedicatoriasScreen from '../screens/DedicatoriasScreen'; // 🆕 NUEVA
 
 const Stack = createNativeStackNavigator();
 
@@ -56,7 +57,7 @@ export default function StackNavigator() {
         options={{ title: 'Tu historia' }}
       />
       <Stack.Screen
-        name="EditarPreguntaScreen" // 🆕 AÑADIDO
+        name="EditarPreguntaScreen"
         component={EditarPreguntaScreen}
         options={{ title: 'Editar respuesta' }}
       />
@@ -76,6 +77,11 @@ export default function StackNavigator() {
         name="FotosPorSeccion"
         component={FotosPorSeccionScreen}
         options={{ title: 'Tus fotos por etapa' }}
+      />
+      <Stack.Screen
+        name="Dedicatorias"
+        component={DedicatoriasScreen}
+        options={{ title: 'Dedicatorias personalizadas' }}
       />
     </Stack.Navigator>
   );

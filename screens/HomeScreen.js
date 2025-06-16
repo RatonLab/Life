@@ -1,54 +1,94 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { auth } from '../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
-import { estilosBase } from '../styles/theme';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
 
+  const cerrarSesion = async () => {
+    await auth.signOut();
+    navigation.replace('Login');
+  };
+
+  const Boton = ({ title, icon, onPress, color = '#1E90FF' }) => (
+    <TouchableOpacity
+      style={[styles.boton, { backgroundColor: color }]}
+      onPress={onPress}
+    >
+      <Text style={styles.botonTexto}>{icon} {title}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView contentContainerStyle={styles.wrapper}>
-      <View style={estilosBase.contenedor}>
-        <Text style={estilosBase.titulo}>Bienvenida a "Mi vida en palabras"</Text>
-        <Text style={estilosBase.subtitulo}>
-          Una app para escribir tu historia con amor, memoria y emoción. ¿Por dónde quieres empezar?
-        </Text>
+    <View style={styles.contenedor}>
+      <Text style={styles.titulo}>👋 Bienvenido a “Mi vida en palabras”</Text>
 
-        <TouchableOpacity
-          style={estilosBase.boton}
+      <View style={styles.botones}>
+        <Boton
+          title="Comenzar tu historia"
+          icon="📖"
           onPress={() => navigation.navigate('SeleccionarSeccion')}
-        >
-          <Text style={estilosBase.botonTexto}>✍️ Comenzar preguntas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={estilosBase.boton}
+        />
+        <Boton
+          title="Ver respuestas guardadas"
+          icon="💾"
           onPress={() => navigation.navigate('Respuestas')}
-        >
-          <Text style={estilosBase.botonTexto}>📖 Ver respuestas guardadas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={estilosBase.boton}
+        />
+        <Boton
+          title="Subir fotos por etapa"
+          icon="🖼️"
           onPress={() => navigation.navigate('FotosPorSeccion')}
-        >
-          <Text style={estilosBase.botonTexto}>🖼️ Subir fotos por etapa</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={estilosBase.boton}
+        />
+        <Boton
+          title="Exportar libro PDF"
+          icon="📤"
           onPress={() => navigation.navigate('ExportarPDF')}
-        >
-          <Text style={estilosBase.botonTexto}>📄 Exportar libro en PDF</Text>
-        </TouchableOpacity>
+        />
+        <Boton
+          title="Dedicatorias personalizadas"
+          icon="💌"
+          onPress={() => navigation.navigate('Dedicatorias')}
+        />
+        <Boton
+          title="Cerrar sesión"
+          icon="🚪"
+          color="crimson"
+          onPress={cerrarSesion}
+        />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flexGrow: 1,
+  contenedor: {
+    flex: 1,
+    backgroundColor: '#FFF5EB',
+    padding: 20,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#333',
+  },
+  botones: {
+    width: '100%',
+    gap: 14,
+  },
+  boton: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  botonTexto: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
