@@ -4,116 +4,89 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 import { colores, estilosBase } from '../styles/theme';
-import { Feather } from '@expo/vector-icons';
 
 export default function RegisterScreen({ navigation }) {
+  const [nombreAutor, setNombreAutor] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [clave, setClave] = useState('');
 
-  const handleRegister = async () => {
+  const registrar = async () => {
+    if (!nombreAutor || !email || !clave) {
+      Alert.alert('⚠️ Campos incompletos', 'Por favor, completa todos los campos.');
+      return;
+    }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert('Registro exitoso', 'Ahora puedes iniciar sesión.');
-      navigation.replace('Login');
+      const credenciales = await createUserWithEmailAndPassword(auth, email, clave);
+
+      // Guardar datos del usuario en Firestore, incluyendo el nombre del autor
+      await setDoc(doc(db, 'usuarios', credenciales.user.uid), {
+        nombre: nombreAutor.trim(),
+        correo: email,
+        creado: new Date(),
+      });
+
+      Alert.alert('✅ Registro exitoso', 'Ya puedes iniciar sesión');
+      navigation.navigate('Login');
     } catch (error) {
-      Alert.alert('Error al registrarse', error.message);
+      console.error('Error en el registro:', error);
+      Alert.alert('❌ Error', error.message);
     }
   };
 
   return (
-    <View style={styles.contenedor}>
-      <Text style={styles.titulo}>Crear cuenta</Text>
+    <View style={estilosBase.contenedor}>
+      <Text style={estilosBase.titulo}>Crear cuenta</Text>
 
-      <Text style={styles.label}>Correo electrónico</Text>
       <TextInput
         style={styles.input}
+        placeholder="Nombre del autor/a"
+        value={nombreAutor}
+        onChangeText={setNombreAutor}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Correo electrónico"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
-        placeholder="ejemplo@correo.com"
       />
 
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputPasswordContainer}>
-        <TextInput
-          style={styles.inputPassword}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!mostrarPassword}
-          placeholder="Mínimo 6 caracteres"
-        />
-        <TouchableOpacity onPress={() => setMostrarPassword(!mostrarPassword)}>
-          <Feather
-            name={mostrarPassword ? 'eye' : 'eye-off'}
-            size={22}
-            color={colores.secundario}
-          />
-        </TouchableOpacity>
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        secureTextEntry
+        value={clave}
+        onChangeText={setClave}
+      />
 
-      <TouchableOpacity style={estilosBase.boton} onPress={handleRegister}>
+      <TouchableOpacity style={estilosBase.boton} onPress={registrar}>
         <Text style={estilosBase.botonTexto}>Registrarse</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+        <Text style={estilosBase.link}>¿Ya tienes cuenta? Inicia sesión</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  contenedor: {
-    ...estilosBase.contenedor,
-    justifyContent: 'center',
-  },
-  titulo: {
-    ...estilosBase.titulo,
-    fontSize: 28,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  label: {
-    ...estilosBase.texto,
-    fontSize: 18,
-    marginBottom: 6,
-  },
   input: {
-    borderWidth: 1,
     borderColor: colores.borde,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  inputPasswordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: colores.borde,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
     backgroundColor: '#fff',
-    marginBottom: 16,
-  },
-  inputPassword: {
-    flex: 1,
-    fontSize: 16,
-  },
-  link: {
-    marginTop: 12,
-    color: colores.acento,
-    textAlign: 'center',
-    fontSize: 16,
   },
 });

@@ -1,70 +1,112 @@
-import React, { useState } from 'react';
-import { View, Button, TextInput, StyleSheet, Alert } from 'react-native';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db, auth } from '../firebaseConfig';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+} from 'react-native';
+import { colores, estilosBase } from '../styles/theme';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
 export default function ExportarPDFScreen() {
-  const [dedicatoria, setDedicatoria] = useState("Para ti, con amor. Esta es mi vida en palabras...");
+  const [estiloSeleccionado, setEstiloSeleccionado] = useState('Vintage');
+  const [nombreAutor, setNombreAutor] = useState('');
 
-  const generarPDF = async () => {
-    const user = auth.currentUser;
-    if (!user) return Alert.alert("Error", "Usuario no autenticado");
+  const estilosDisponibles = ['Vintage', 'Moderno', 'Orgánico'];
 
-    try {
-      const q = query(collection(db, 'respuestas'), where('uid', '==', user.uid));
-      const snapshot = await getDocs(q);
-      let contenido = "";
+  useEffect(() => {
+    const cargarNombre = async () => {
+      try {
+        const ref = doc(db, 'usuarios', auth.currentUser.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setNombreAutor(snap.data().nombre || '');
+        }
+      } catch (e) {
+        console.error('Error al cargar nombre del autor:', e);
+      }
+    };
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        contenido += `
-          <h3>${data.pregunta}</h3>
-          <p>${data.respuesta || '(Sin respuesta)'}</p>
-          <hr />
-        `;
-      });
+    cargarNombre();
+  }, []);
 
-      const html = `
-        <html>
-          <body style="font-family: Arial; padding: 20px;">
-            <h1 style="text-align:center;">Mi vida en palabras</h1>
-            <blockquote>${dedicatoria}</blockquote>
-            ${contenido}
-          </body>
-        </html>
-      `;
-
-      const { uri } = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(uri);
-    } catch (err) {
-      Alert.alert("Error al generar PDF", err.message);
-    }
+  const generarPDF = () => {
+    Alert.alert(
+      '📘 Generar PDF',
+      `Se generará el libro con estilo "${estiloSeleccionado}" y autor "${nombreAutor}".`
+    );
+    // Aquí se integrará la lógica real de generación del PDF
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        multiline
-        placeholder="Escribe una dedicatoria para el PDF..."
-        value={dedicatoria}
-        onChangeText={setDedicatoria}
-      />
-      <Button title="Generar PDF" onPress={generarPDF} />
-    </View>
+    <ScrollView style={estilosBase.contenedor}>
+      <Text style={estilosBase.titulo}>📘 Exportar tu libro</Text>
+
+      <Text style={styles.label}>1. Selecciona un estilo visual:</Text>
+      <View style={styles.estilos}>
+        {estilosDisponibles.map((estilo) => (
+          <TouchableOpacity
+            key={estilo}
+            style={[
+              styles.botonEstilo,
+              estiloSeleccionado === estilo && styles.estiloSeleccionado,
+            ]}
+            onPress={() => setEstiloSeleccionado(estilo)}
+          >
+            <Text
+              style={[
+                styles.textoEstilo,
+                estiloSeleccionado === estilo && styles.textoSeleccionado,
+              ]}
+            >
+              {estilo}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TouchableOpacity style={estilosBase.boton} onPress={generarPDF}>
+        <Text style={estilosBase.botonTexto}>📄 Generar libro en PDF</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: {
-    height: 120,
-    borderColor: '#ccc',
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: colores.texto,
+  },
+  estilos: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginBottom: 24,
+  },
+  botonEstilo: {
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    padding: 10,
-    marginBottom: 20,
-    textAlignVertical: 'top'
-  }
+    borderColor: colores.borde,
+    marginBottom: 10,
+    backgroundColor: '#f5f5f5',
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  estiloSeleccionado: {
+    backgroundColor: colores.secundario,
+  },
+  textoEstilo: {
+    fontSize: 14,
+    color: '#333',
+  },
+  textoSeleccionado: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });

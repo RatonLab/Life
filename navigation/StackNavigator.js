@@ -12,7 +12,7 @@ import EditarPreguntaScreen from '../screens/EditarPreguntaScreen';
 import RespuestasScreen from '../screens/RespuestasScreen';
 import ExportarPDFScreen from '../screens/ExportarPDFScreen';
 import FotosPorSeccionScreen from '../screens/FotosPorSeccionScreen';
-import DedicatoriasScreen from '../screens/DedicatoriasScreen'; // 🆕 NUEVA
+import DedicatoriasPersonalizadasScreen from '../screens/DedicatoriasPersonalizadasScreen'; // ✅ Corrección
 
 const Stack = createNativeStackNavigator();
 
@@ -80,7 +80,7 @@ export default function StackNavigator() {
       />
       <Stack.Screen
         name="Dedicatorias"
-        component={DedicatoriasScreen}
+        component={DedicatoriasPersonalizadasScreen}
         options={{ title: 'Dedicatorias personalizadas' }}
       />
     </Stack.Navigator>
