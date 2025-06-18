@@ -12,7 +12,8 @@ import EditarPreguntaScreen from '../screens/EditarPreguntaScreen';
 import RespuestasScreen from '../screens/RespuestasScreen';
 import ExportarPDFScreen from '../screens/ExportarPDFScreen';
 import FotosPorSeccionScreen from '../screens/FotosPorSeccionScreen';
-import DedicatoriasPersonalizadasScreen from '../screens/DedicatoriasPersonalizadasScreen'; // ✅ Corrección
+import DedicatoriasPersonalizadasScreen from '../screens/DedicatoriasPersonalizadasScreen';
+import EditarPerfilScreen from '../screens/EditarPerfilScreen'; // ✅ Nueva pantalla añadida
 
 const Stack = createNativeStackNavigator();
 
@@ -82,6 +83,11 @@ export default function StackNavigator() {
         name="Dedicatorias"
         component={DedicatoriasPersonalizadasScreen}
         options={{ title: 'Dedicatorias personalizadas' }}
+      />
+      <Stack.Screen
+        name="EditarPerfil"
+        component={EditarPerfilScreen}
+        options={{ title: 'Editar perfil' }}
       />
     </Stack.Navigator>
   );

@@ -10,10 +10,13 @@ import {
 import { colores, estilosBase } from '../styles/theme';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+import { generarPortadaPDF } from '../utils/generarPortadaPDF';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ExportarPDFScreen() {
   const [estiloSeleccionado, setEstiloSeleccionado] = useState('Vintage');
   const [nombreAutor, setNombreAutor] = useState('');
+  const navigation = useNavigation();
 
   const estilosDisponibles = ['Vintage', 'Moderno', 'Orgánico'];
 
@@ -34,11 +37,27 @@ export default function ExportarPDFScreen() {
   }, []);
 
   const generarPDF = () => {
+    if (!nombreAutor.trim()) {
+      Alert.alert(
+        '❗ Nombre requerido',
+        'Por favor, completa tu nombre en la sección "Editar perfil" antes de generar el libro.',
+        [
+          {
+            text: 'Ir a Editar Perfil',
+            onPress: () => navigation.navigate('EditarPerfil'),
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
     Alert.alert(
-      '📘 Generar PDF',
+      '📘 Generar libro',
       `Se generará el libro con estilo "${estiloSeleccionado}" y autor "${nombreAutor}".`
     );
-    // Aquí se integrará la lógica real de generación del PDF
+
+    generarPortadaPDF(nombreAutor, estiloSeleccionado, null); // sin imagen por ahora
   };
 
   return (
