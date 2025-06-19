@@ -2,20 +2,23 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   ScrollView,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { colores, estilosBase } from '../styles/theme';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
-import { generarPortadaPDF } from '../utils/generarPortadaPDF';
+import { generarLibroPDF } from '../utils/generarLibroPDF';
 import { useNavigation } from '@react-navigation/native';
+import { TouchableOpacity } from 'react-native';
 
 export default function ExportarPDFScreen() {
   const [estiloSeleccionado, setEstiloSeleccionado] = useState('Vintage');
   const [nombreAutor, setNombreAutor] = useState('');
+  const [dedicatorias, setDedicatorias] = useState([]);
+  const [dedicatoriaSeleccionada, setDedicatoriaSeleccionada] = useState('');
   const navigation = useNavigation();
 
   const estilosDisponibles = ['Vintage', 'Moderno', 'Orgánico'];
@@ -33,7 +36,25 @@ export default function ExportarPDFScreen() {
       }
     };
 
+    const cargarDedicatorias = async () => {
+      try {
+        const ref = doc(db, 'dedicatorias', auth.currentUser.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          const lista = data.mensajes || [];
+          setDedicatorias(lista);
+          if (lista.length > 0) {
+            setDedicatoriaSeleccionada(lista[0].texto);
+          }
+        }
+      } catch (e) {
+        console.error('Error al cargar dedicatorias:', e);
+      }
+    };
+
     cargarNombre();
+    cargarDedicatorias();
   }, []);
 
   const generarPDF = () => {
@@ -52,18 +73,19 @@ export default function ExportarPDFScreen() {
       return;
     }
 
-    Alert.alert(
-      '📘 Generar libro',
-      `Se generará el libro con estilo "${estiloSeleccionado}" y autor "${nombreAutor}".`
-    );
+    if (!dedicatoriaSeleccionada) {
+      Alert.alert('❗ Dedicatoria requerida', 'Selecciona una dedicatoria antes de exportar.');
+      return;
+    }
 
-    generarPortadaPDF(nombreAutor, estiloSeleccionado, null); // sin imagen por ahora
+    generarLibroPDF(nombreAutor, estiloSeleccionado, dedicatoriaSeleccionada, null);
   };
 
   return (
     <ScrollView style={estilosBase.contenedor}>
       <Text style={estilosBase.titulo}>📘 Exportar tu libro</Text>
 
+      {/* Estilo visual */}
       <Text style={styles.label}>1. Selecciona un estilo visual:</Text>
       <View style={styles.estilos}>
         {estilosDisponibles.map((estilo) => (
@@ -87,6 +109,28 @@ export default function ExportarPDFScreen() {
         ))}
       </View>
 
+      {/* Dedicatoria */}
+      <Text style={styles.label}>2. Selecciona una dedicatoria:</Text>
+      {dedicatorias.length > 0 ? (
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={dedicatoriaSeleccionada}
+            onValueChange={(itemValue) => setDedicatoriaSeleccionada(itemValue)}
+          >
+            {dedicatorias.map((dedi, idx) => (
+              <Picker.Item
+                key={idx}
+                label={dedi.titulo || `Dedicatoria ${idx + 1}`}
+                value={dedi.texto}
+              />
+            ))}
+          </Picker>
+        </View>
+      ) : (
+        <Text style={{ marginBottom: 20 }}>No has agregado dedicatorias aún.</Text>
+      )}
+
+      {/* Botón exportar */}
       <TouchableOpacity style={estilosBase.boton} onPress={generarPDF}>
         <Text style={estilosBase.botonTexto}>📄 Generar libro en PDF</Text>
       </TouchableOpacity>
@@ -127,5 +171,12 @@ const styles = StyleSheet.create({
   textoSeleccionado: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  pickerContainer: {
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
 });

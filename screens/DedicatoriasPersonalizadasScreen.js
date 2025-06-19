@@ -8,43 +8,28 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import {
-  collection,
-  doc,
-  setDoc,
-  getDocs,
-  query,
-  where,
-} from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import { estilosBase, colores } from '../styles/theme';
 
 export default function DedicatoriasPersonalizadasScreen() {
   const usuarioId = auth.currentUser.uid;
-  const [dedicatorias, setDedicatorias] = useState(
-    Array.from({ length: 10 }, () => ({ para: '', texto: '' }))
-  );
+  const [dedicatorias, setDedicatorias] = useState([]);
 
   useEffect(() => {
     const cargarDedicatorias = async () => {
       try {
-        const q = query(collection(db, 'dedicatorias'), where('usuarioId', '==', usuarioId));
-        const snapshot = await getDocs(q);
-        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        const nuevas = Array.from({ length: 10 }, () => ({ para: '', texto: '' }));
-
-        docs.forEach((d) => {
-          const idx = typeof d.index === 'number' ? d.index : null;
-          if (idx !== null && idx >= 0 && idx < 10) {
-            nuevas[idx] = {
-              para: d.para || '',
-              texto: d.texto || '',
-            };
-          }
-        });
-
-        setDedicatorias(nuevas);
+        const ref = doc(db, 'dedicatorias', usuarioId);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data();
+          const mensajes = data.mensajes || [];
+          const nuevas = mensajes.slice(0, 10).map((item) => ({
+            para: item.titulo || '',
+            texto: item.texto || '',
+          }));
+          setDedicatorias(nuevas);
+        }
       } catch (e) {
         console.error('Error cargando dedicatorias:', e);
         Alert.alert('❌ Error', 'No se pudieron cargar las dedicatorias.');
@@ -63,14 +48,17 @@ export default function DedicatoriasPersonalizadasScreen() {
   };
 
   const guardarUna = async (index) => {
-    const dedicatoria = dedicatorias[index];
+    const dedicatoriasValidas = dedicatorias
+      .filter((d) => d.para.trim() && d.texto.trim())
+      .map((d) => ({
+        titulo: d.para.trim(),
+        texto: d.texto.trim(),
+      }));
+
     try {
-      const ref = doc(db, 'dedicatorias', `${usuarioId}_dedic${index + 1}`);
+      const ref = doc(db, 'dedicatorias', usuarioId);
       await setDoc(ref, {
-        usuarioId,
-        para: dedicatoria.para.trim(),
-        texto: dedicatoria.texto.trim(),
-        index,
+        mensajes: dedicatoriasValidas,
       });
       Alert.alert('✅ Guardado', `Dedicatoria ${index + 1} actualizada.`);
     } catch (e) {
@@ -79,9 +67,45 @@ export default function DedicatoriasPersonalizadasScreen() {
     }
   };
 
+  const eliminarUna = async (index) => {
+    const nuevas = [...dedicatorias];
+    nuevas.splice(index, 1);
+    setDedicatorias(nuevas);
+
+    const dedicatoriasValidas = nuevas
+      .filter((d) => d.para.trim() && d.texto.trim())
+      .map((d) => ({
+        titulo: d.para.trim(),
+        texto: d.texto.trim(),
+      }));
+
+    try {
+      const ref = doc(db, 'dedicatorias', usuarioId);
+      await setDoc(ref, {
+        mensajes: dedicatoriasValidas,
+      });
+      Alert.alert('🗑️ Eliminada', `Dedicatoria ${index + 1} fue eliminada.`);
+    } catch (e) {
+      console.error('Error eliminando:', e);
+      Alert.alert('❌ Error', 'No se pudo eliminar la dedicatoria.');
+    }
+  };
+
+  const agregarDedicatoria = () => {
+    if (dedicatorias.length >= 10) {
+      Alert.alert('⚠️ Límite alcanzado', 'Solo puedes agregar hasta 10 dedicatorias.');
+      return;
+    }
+    setDedicatorias([...dedicatorias, { para: '', texto: '' }]);
+  };
+
   return (
     <ScrollView style={estilosBase.contenedor}>
       <Text style={estilosBase.titulo}>💌 Dedicatorias personalizadas</Text>
+
+      <TouchableOpacity style={styles.botonAgregar} onPress={agregarDedicatoria}>
+        <Text style={styles.botonAgregarTexto}>➕ Agregar dedicatoria</Text>
+      </TouchableOpacity>
 
       {dedicatorias.map((d, i) => (
         <View key={i} style={styles.bloque}>
@@ -106,9 +130,14 @@ export default function DedicatoriasPersonalizadasScreen() {
 
           <Text style={styles.contador}>{d.texto.length} / 8000 caracteres</Text>
 
-          <TouchableOpacity style={styles.botonGuardar} onPress={() => guardarUna(i)}>
-            <Text style={estilosBase.botonTexto}>Guardar dedicatoria {i + 1}</Text>
-          </TouchableOpacity>
+          <View style={styles.botonesFila}>
+            <TouchableOpacity style={styles.botonGuardar} onPress={() => guardarUna(i)}>
+              <Text style={estilosBase.botonTexto}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.botonEliminar} onPress={() => eliminarUna(i)}>
+              <Text style={estilosBase.botonTexto}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ))}
     </ScrollView>
@@ -144,8 +173,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 10,
   },
+  botonAgregar: {
+    backgroundColor: colores.terciario,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  botonAgregarTexto: {
+    color: '#333', // Texto oscuro para mejor visibilidad
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  botonesFila: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   botonGuardar: {
     backgroundColor: colores.primario,
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botonEliminar: {
+    backgroundColor: '#cc4444',
+    flex: 1,
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
