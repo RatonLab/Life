@@ -13,14 +13,18 @@ import RespuestasScreen from '../screens/RespuestasScreen';
 import ExportarPDFScreen from '../screens/ExportarPDFScreen';
 import FotosPorSeccionScreen from '../screens/FotosPorSeccionScreen';
 import DedicatoriasPersonalizadasScreen from '../screens/DedicatoriasPersonalizadasScreen';
-import EditarPerfilScreen from '../screens/EditarPerfilScreen'; // ✅ Nueva pantalla añadida
+import EditarPerfilScreen from '../screens/EditarPerfilScreen';
+import ResumenRespuestasScreen from '../screens/ResumenRespuestasScreen';
+import MenuRespuestasScreen from '../screens/MenuRespuestasScreen';
+import PensamientoFinalScreen from '../screens/PensamientoFinalScreen';
+import HistorialLibrosScreen from '../screens/HistorialLibrosScreen'; // ✅ Nueva pantalla
 
 const Stack = createNativeStackNavigator();
 
 export default function StackNavigator() {
   return (
     <Stack.Navigator initialRouteName="Splash">
-      {/* Pantalla de bienvenida con logo */}
+      {/* Bienvenida */}
       <Stack.Screen
         name="Splash"
         component={SplashScreen}
@@ -39,14 +43,14 @@ export default function StackNavigator() {
         options={{ headerShown: false }}
       />
 
-      {/* Inicio después del login */}
+      {/* Inicio */}
       <Stack.Screen
         name="Home"
         component={HomeScreen}
         options={{ title: 'Inicio' }}
       />
 
-      {/* Sección de preguntas por etapa */}
+      {/* Preguntas por etapa */}
       <Stack.Screen
         name="SeleccionarSeccion"
         component={SeleccionarSeccionScreen}
@@ -63,12 +67,24 @@ export default function StackNavigator() {
         options={{ title: 'Editar respuesta' }}
       />
 
-      {/* Funcionalidades adicionales */}
+      {/* Menú de respuestas */}
+      <Stack.Screen
+        name="MenuRespuestas"
+        component={MenuRespuestasScreen}
+        options={{ title: 'Respuestas guardadas' }}
+      />
       <Stack.Screen
         name="Respuestas"
         component={RespuestasScreen}
-        options={{ title: 'Respuestas guardadas' }}
+        options={{ title: 'Listado de respuestas' }}
       />
+      <Stack.Screen
+        name="ResumenRespuestas"
+        component={ResumenRespuestasScreen}
+        options={{ title: 'Resumen por etapa' }}
+      />
+
+      {/* Exportación y elementos adicionales */}
       <Stack.Screen
         name="ExportarPDF"
         component={ExportarPDFScreen}
@@ -88,6 +104,18 @@ export default function StackNavigator() {
         name="EditarPerfil"
         component={EditarPerfilScreen}
         options={{ title: 'Editar perfil' }}
+      />
+      <Stack.Screen
+        name="PensamientoFinal"
+        component={PensamientoFinalScreen}
+        options={{ title: 'Pensamiento final' }}
+      />
+
+      {/* ✅ Nuevo: Historial de libros generados */}
+      <Stack.Screen
+        name="HistorialLibros"
+        component={HistorialLibrosScreen}
+        options={{ title: 'Historial de libros' }}
       />
     </Stack.Navigator>
   );

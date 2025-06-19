@@ -52,7 +52,7 @@ export default function HomeScreen() {
         <Boton
           title="Ver respuestas guardadas"
           icon="💾"
-          onPress={() => navigation.navigate('Respuestas')}
+          onPress={() => navigation.navigate('MenuRespuestas')}
         />
         <Boton
           title="Subir fotos por etapa"
@@ -65,12 +65,17 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('Dedicatorias')}
         />
         <Boton
+          title="Historial de libros"
+          icon="📚"
+          onPress={() => navigation.navigate('HistorialLibros')}
+        />
+        <Boton
           title="Exportar libro PDF"
           icon="📤"
           onPress={() => navigation.navigate('ExportarPDF')}
         />
 
-        {/* Espacio de separación visual */}
+        {/* Espacio visual */}
         <View style={{ marginVertical: 14 }} />
 
         <Boton

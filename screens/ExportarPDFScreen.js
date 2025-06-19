@@ -5,6 +5,9 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Image,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { colores, estilosBase } from '../styles/theme';
@@ -12,16 +15,14 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import { generarLibroPDF } from '../utils/generarLibroPDF';
 import { useNavigation } from '@react-navigation/native';
-import { TouchableOpacity } from 'react-native';
+import portadaUnica from '../assets/portadas/portada_unica.png';
 
 export default function ExportarPDFScreen() {
-  const [estiloSeleccionado, setEstiloSeleccionado] = useState('Vintage');
   const [nombreAutor, setNombreAutor] = useState('');
   const [dedicatorias, setDedicatorias] = useState([]);
   const [dedicatoriaSeleccionada, setDedicatoriaSeleccionada] = useState('');
+  const [nombreArchivo, setNombreArchivo] = useState('mi_vida_en_palabras');
   const navigation = useNavigation();
-
-  const estilosDisponibles = ['Vintage', 'Moderno', 'Orgánico'];
 
   useEffect(() => {
     const cargarNombre = async () => {
@@ -57,7 +58,7 @@ export default function ExportarPDFScreen() {
     cargarDedicatorias();
   }, []);
 
-  const generarPDF = () => {
+  const generarPDF = async () => {
     if (!nombreAutor.trim()) {
       Alert.alert(
         '❗ Nombre requerido',
@@ -78,39 +79,42 @@ export default function ExportarPDFScreen() {
       return;
     }
 
-    generarLibroPDF(nombreAutor, estiloSeleccionado, dedicatoriaSeleccionada, null);
+    try {
+      await generarLibroPDF(nombreAutor, dedicatoriaSeleccionada, nombreArchivo);
+      Alert.alert('✅ ¡Libro generado!', 'Tu libro fue creado correctamente y está listo para compartir.');
+    } catch (error) {
+      console.error('Error al generar el PDF:', error);
+      Alert.alert('❌ Error', 'Ocurrió un problema al generar el libro. Intenta nuevamente.');
+    }
   };
 
   return (
     <ScrollView style={estilosBase.contenedor}>
       <Text style={estilosBase.titulo}>📘 Exportar tu libro</Text>
 
-      {/* Estilo visual */}
-      <Text style={styles.label}>1. Selecciona un estilo visual:</Text>
-      <View style={styles.estilos}>
-        {estilosDisponibles.map((estilo) => (
-          <TouchableOpacity
-            key={estilo}
-            style={[
-              styles.botonEstilo,
-              estiloSeleccionado === estilo && styles.estiloSeleccionado,
-            ]}
-            onPress={() => setEstiloSeleccionado(estilo)}
-          >
-            <Text
-              style={[
-                styles.textoEstilo,
-                estiloSeleccionado === estilo && styles.textoSeleccionado,
-              ]}
-            >
-              {estilo}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Vista previa fija de la portada */}
+      <Text style={{ fontSize: 14, marginBottom: 8, color: colores.texto }}>
+        Vista previa de la portada:
+      </Text>
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <Image
+          source={portadaUnica}
+          style={{ width: 200, height: 280, resizeMode: 'contain', borderRadius: 10 }}
+        />
       </View>
 
+      {/* Campo para ingresar nombre de archivo */}
+      <Text style={styles.label}>Nombre del archivo PDF:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Ejemplo: libro_para_mamá"
+        value={nombreArchivo}
+        onChangeText={setNombreArchivo}
+      />
+      <Text style={styles.preview}>📁 Se guardará como: <Text style={{ fontWeight: 'bold' }}>{nombreArchivo || 'mi_vida_en_palabras'}.pdf</Text></Text>
+
       {/* Dedicatoria */}
-      <Text style={styles.label}>2. Selecciona una dedicatoria:</Text>
+      <Text style={styles.label}>Selecciona una dedicatoria:</Text>
       {dedicatorias.length > 0 ? (
         <View style={styles.pickerContainer}>
           <Picker
@@ -145,32 +149,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: colores.texto,
   },
-  estilos: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    marginBottom: 24,
-  },
-  botonEstilo: {
-    padding: 12,
-    borderRadius: 10,
+  input: {
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: colores.borde,
-    marginBottom: 10,
-    backgroundColor: '#f5f5f5',
-    minWidth: 100,
-    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    fontSize: 16,
+    color: colores.texto,
   },
-  estiloSeleccionado: {
-    backgroundColor: colores.secundario,
-  },
-  textoEstilo: {
+  preview: {
     fontSize: 14,
-    color: '#333',
-  },
-  textoSeleccionado: {
-    color: 'white',
-    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#555',
   },
   pickerContainer: {
     marginBottom: 20,
