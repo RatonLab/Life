@@ -27,8 +27,8 @@ export default function RespuestasScreen() {
         }
         respuestasPorEtapa[etapa].push({
           id: doc.id,
-          pregunta: data.pregunta || 'Pregunta sin texto',
-          respuesta: data.respuesta || 'Sin respuesta',
+          pregunta: data.preguntaId?.trim() ? data.preguntaId : 'Pregunta sin texto',
+          respuesta: data.textoRespuesta?.trim() ? data.textoRespuesta : 'Sin respuesta',
         });
       });
 

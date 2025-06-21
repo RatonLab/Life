@@ -2,6 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { collection, getDocs, query, where, doc, getDoc, addDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth } from '../firebaseConfig';
 
 function dividirTextoEnLineas(texto, maxCaracteresPorLinea) {
@@ -27,11 +28,11 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
   const fontTitulo = await pdfDoc.embedFont(StandardFonts.TimesRoman);
   const fontTexto = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  const colorFondo = rgb(0.95, 0.90, 0.82); // diseño Vintage
+  const colorFondo = rgb(0.95, 0.90, 0.82);
   const colorTexto = rgb(0.2, 0.2, 0.2);
-  const [width, height] = [595, 842]; // A4
+  const [width, height] = [595, 842];
 
-  // 🧾 Portada
+  // Portada
   const portada = pdfDoc.addPage([width, height]);
   portada.drawRectangle({ x: 0, y: 0, width, height, color: colorFondo });
   portada.drawText('Mi vida en palabras', {
@@ -49,7 +50,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     color: colorTexto,
   });
 
-  // 💌 Dedicatoria
+  // Dedicatoria
   const dedicatoria = pdfDoc.addPage([width, height]);
   dedicatoria.drawRectangle({ x: 0, y: 0, width, height, color: colorFondo });
   dedicatoria.drawRectangle({
@@ -71,7 +72,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     });
   });
 
-  // 🔍 Recolectar respuestas del usuario
+  // Recolectar respuestas
   const usuarioID = auth.currentUser.uid;
   const q = query(
     collection(db, 'respuestas'),
@@ -91,7 +92,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     });
   });
 
-  // 📚 Páginas por etapa (excepto “Mensaje final”)
+  // Páginas por etapa
   for (const etapa of Object.keys(respuestas)) {
     if (etapa === 'Mensaje final') continue;
 
@@ -108,7 +109,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     let y = height - 120;
 
     for (const item of respuestas[etapa]) {
-      const preguntaLineas = dividirTextoEnLineas(`❓ ${item.pregunta}`, 90);
+      const preguntaLineas = dividirTextoEnLineas(`Pregunta: ${item.pregunta}`, 90);
       for (const linea of preguntaLineas) {
         page.drawText(linea, {
           x: 60,
@@ -140,7 +141,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     }
   }
 
-  // 🌅 Última hoja con pensamiento final
+  // Pensamiento final
   try {
     const userDoc = await getDoc(doc(db, 'usuarios', usuarioID));
     const pensamientoFinal = userDoc.exists() ? userDoc.data().pensamientoFinal : '';
@@ -149,7 +150,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
       const finalPage = pdfDoc.addPage([width, height]);
       finalPage.drawRectangle({ x: 0, y: 0, width, height, color: colorFondo });
 
-      finalPage.drawText('🕊️ Pensamiento final', {
+      finalPage.drawText('Pensamiento final', {
         x: 60,
         y: height - 100,
         size: 22,
@@ -157,7 +158,7 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
         color: colorTexto,
       });
 
-      const lineasFinal = dividirTextoEnLineas(`“${pensamientoFinal.trim()}”`, 90);
+      const lineasFinal = dividirTextoEnLineas(`"${pensamientoFinal.trim()}"`, 90);
       lineasFinal.forEach((linea, i) => {
         finalPage.drawText(linea, {
           x: 60,
@@ -180,14 +181,21 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     console.warn('No se pudo cargar el pensamiento final:', error);
   }
 
-  // 💾 Guardar y compartir
-  const pdfBytes = await pdfDoc.save();
+  // Guardar y subir a Firebase Storage
+  const pdfBase64 = await pdfDoc.saveAsBase64();
   const nombreLimpio = nombreArchivo.trim().replace(/[^a-zA-Z0-9_\-]/g, '_') || 'mi_vida_en_palabras';
   const filePath = FileSystem.documentDirectory + `${nombreLimpio}.pdf`;
 
-  await FileSystem.writeAsStringAsync(filePath, pdfBytes, {
+  await FileSystem.writeAsStringAsync(filePath, pdfBase64, {
     encoding: FileSystem.EncodingType.Base64,
   });
+
+  const storage = getStorage();
+  const pdfUri = await FileSystem.readAsStringAsync(filePath, { encoding: FileSystem.EncodingType.Base64 });
+  const storageRef = ref(storage, `libros/${usuarioID}/${nombreLimpio}.pdf`);
+  const pdfBuffer = Uint8Array.from(atob(pdfUri), c => c.charCodeAt(0));
+  await uploadBytes(storageRef, pdfBuffer);
+  const urlPDF = await getDownloadURL(storageRef);
 
   await Sharing.shareAsync(filePath, {
     mimeType: 'application/pdf',
@@ -195,13 +203,15 @@ export async function generarLibroPDF(nombreAutor, dedicatoriaTexto, nombreArchi
     UTI: 'com.adobe.pdf',
   });
 
-  // 🗂️ Guardar historial del libro generado
+  // Guardar historial en Firestore con URL
   try {
     await addDoc(collection(db, 'libros_generados'), {
       usuarioID,
       nombreArchivo: `${nombreLimpio}.pdf`,
       nombreAutor,
       fechaCreacion: new Date().toISOString(),
+      dedicatoria: dedicatoriaTexto,
+      url: urlPDF,
     });
   } catch (error) {
     console.warn('No se pudo guardar el historial del libro generado:', error);

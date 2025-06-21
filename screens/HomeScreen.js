@@ -65,14 +65,19 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('Dedicatorias')}
         />
         <Boton
-          title="Historial de libros"
-          icon="📚"
-          onPress={() => navigation.navigate('HistorialLibros')}
+          title="Pensamiento final"
+          icon="🕊️"
+          onPress={() => navigation.navigate('PensamientoFinal')}
         />
         <Boton
           title="Exportar libro PDF"
           icon="📤"
           onPress={() => navigation.navigate('ExportarPDF')}
+        />
+        <Boton
+          title="Historial de libros"
+          icon="📚"
+          onPress={() => navigation.navigate('HistorialLibros')}
         />
 
         {/* Espacio visual */}
