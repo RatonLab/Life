@@ -7,6 +7,15 @@ import { colores, estilosBase } from '../styles/theme';
 export default function RespuestasScreen() {
   const [agrupadas, setAgrupadas] = useState({});
 
+  const ordenEtapas = [
+    'Infancia',
+    'Adolescencia',
+    'Juventud',
+    'Adulto Joven',
+    'Adulto Mayor',
+    'Mensaje final',
+  ];
+
   useEffect(() => {
     const cargarRespuestas = async () => {
       const usuarioID = auth.currentUser.uid;
@@ -45,17 +54,22 @@ export default function RespuestasScreen() {
       {Object.keys(agrupadas).length === 0 ? (
         <Text style={styles.texto}>No se encontraron respuestas aún.</Text>
       ) : (
-        Object.entries(agrupadas).map(([etapa, respuestas]) => (
-          <View key={etapa} style={styles.seccion}>
-            <Text style={styles.etapa}>{etapa}</Text>
-            {respuestas.map(({ id, pregunta, respuesta }) => (
-              <View key={id} style={styles.bloque}>
-                <Text style={styles.pregunta}>❓ {pregunta}</Text>
-                <Text style={styles.respuesta}>✏️ {respuesta}</Text>
-              </View>
-            ))}
-          </View>
-        ))
+        ordenEtapas.map(etapa => {
+          const respuestas = agrupadas[etapa];
+          if (!respuestas || respuestas.length === 0) return null;
+
+          return (
+            <View key={etapa} style={styles.seccion}>
+              <Text style={styles.etapa}>{etapa}</Text>
+              {respuestas.map(({ id, pregunta, respuesta }) => (
+                <View key={id} style={styles.bloque}>
+                  <Text style={styles.pregunta}>❓ {pregunta}</Text>
+                  <Text style={styles.respuesta}>✏️ {respuesta}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })
       )}
     </ScrollView>
   );

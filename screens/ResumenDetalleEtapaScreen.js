@@ -27,33 +27,51 @@ export default function ResumenDetalleEtapaScreen({ route }) {
 
   const porEstado = (estado) => respuestas.filter(r => r.estado === estado);
 
+  const mostrarPregunta = (texto) => {
+    if (!texto || texto.trim() === '') return 'Pregunta no disponible';
+    return texto;
+  };
+
+  // Cálculo directo
+  const respondidas = porEstado('respondida');
+  const omitidas = porEstado('omitida');
+  const totalPreguntas = 15;
+  const pendientes = totalPreguntas - (respondidas.length + omitidas.length);
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.titulo}>{etapa}</Text>
 
-      <Text style={styles.subtitulo}>✅ Respondidas</Text>
-      {porEstado('respondida').map((r, i) => (
-        <View key={i} style={styles.card}>
-          <Text style={styles.pregunta}>❓ {r.pregunta}</Text>
-          <Text style={styles.respuesta}>📝 {r.respuesta}</Text>
-        </View>
-      ))}
+      {/* Resumen de estados */}
+      <View style={styles.resumen}>
+        <Text style={styles.resumenTexto}>✅ Respondidas: {respondidas.length}</Text>
+        <Text style={styles.resumenTexto}>❌ Omitidas: {omitidas.length}</Text>
+        <Text style={styles.resumenTexto}>⏳ Pendientes: {pendientes >= 0 ? pendientes : 0}</Text>
+      </View>
 
-      <Text style={styles.subtitulo}>⏳ Pendientes</Text>
-      {porEstado('pendiente').map((r, i) => (
-        <View key={i} style={styles.card}>
-          <Text style={styles.pregunta}>❓ {r.pregunta}</Text>
-          <Text style={styles.respuesta}>Sin respuesta</Text>
-        </View>
-      ))}
+      {/* Sección Respondidas */}
+      {respondidas.length > 0 && (
+        <>
+          <Text style={styles.subtitulo}>✅ Respondidas</Text>
+          {respondidas.map((r, i) => (
+            <View key={i} style={styles.card}>
+              <Text style={styles.pregunta}>❓ {mostrarPregunta(r.preguntaId)}</Text>
+            </View>
+          ))}
+        </>
+      )}
 
-      <Text style={styles.subtitulo}>❌ Omitidas</Text>
-      {porEstado('omitida').map((r, i) => (
-        <View key={i} style={styles.card}>
-          <Text style={styles.pregunta}>❓ {r.pregunta}</Text>
-          <Text style={styles.respuesta}>No se respondió</Text>
-        </View>
-      ))}
+      {/* Sección Omitidas */}
+      {omitidas.length > 0 && (
+        <>
+          <Text style={styles.subtitulo}>❌ Omitidas</Text>
+          {omitidas.map((r, i) => (
+            <View key={i} style={styles.card}>
+              <Text style={styles.pregunta}>❓ {mostrarPregunta(r.preguntaId)}</Text>
+            </View>
+          ))}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -69,6 +87,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
     textAlign: 'center',
+  },
+  resumen: {
+    backgroundColor: '#FFEBD8',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  resumenTexto: {
+    fontSize: 16,
+    marginBottom: 4,
   },
   subtitulo: {
     fontSize: 18,
@@ -86,8 +114,6 @@ const styles = StyleSheet.create({
   },
   pregunta: {
     fontWeight: 'bold',
-  },
-  respuesta: {
-    marginTop: 4,
+    color: '#444',
   },
 });

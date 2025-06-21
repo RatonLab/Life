@@ -9,6 +9,15 @@ export default function ResumenRespuestasScreen() {
   const [resumen, setResumen] = useState({});
   const navigation = useNavigation();
 
+  const ordenEtapas = [
+    'Infancia',
+    'Adolescencia',
+    'Juventud',
+    'Adulto Joven',
+    'Adulto Mayor',
+    'Mensaje final',
+  ];
+
   useEffect(() => {
     const cargarResumen = async () => {
       const usuarioID = auth.currentUser.uid;
@@ -23,12 +32,12 @@ export default function ResumenRespuestasScreen() {
         const estado = data.estado || 'desconocido';
 
         if (!resumenPorEtapa[etapa]) {
-          resumenPorEtapa[etapa] = { respondida: 0, pendiente: 0, omitida: 0 };
+          resumenPorEtapa[etapa] = { respondida: 0, omitida: 0 };
         }
 
         if (estado === 'respondida') resumenPorEtapa[etapa].respondida += 1;
-        else if (estado === 'pendiente') resumenPorEtapa[etapa].pendiente += 1;
         else if (estado === 'omitida') resumenPorEtapa[etapa].omitida += 1;
+        // No almacenamos pendientes porque se calculan restando sobre 15
       });
 
       setResumen(resumenPorEtapa);
@@ -41,8 +50,12 @@ export default function ResumenRespuestasScreen() {
     <ScrollView style={estilosBase.contenedor}>
       <Text style={estilosBase.titulo}>📊 Resumen por etapa</Text>
 
-      {Object.entries(resumen).map(([etapa, conteos]) => {
-        const total = conteos.respondida + conteos.pendiente + conteos.omitida;
+      {ordenEtapas.map((etapa) => {
+        const conteos = resumen[etapa];
+        if (!conteos) return null;
+
+        const total = conteos.respondida + conteos.omitida;
+        const pendientes = 15 - total;
 
         return (
           <TouchableOpacity
@@ -52,9 +65,9 @@ export default function ResumenRespuestasScreen() {
           >
             <Text style={styles.etapa}>{etapa}</Text>
             <Text style={styles.linea}>✅ Respondidas: {conteos.respondida}</Text>
-            <Text style={styles.linea}>⏳ Pendientes: {conteos.pendiente}</Text>
             <Text style={styles.linea}>❌ Omitidas: {conteos.omitida}</Text>
-            <Text style={styles.total}>📌 Total: {total}</Text>
+            <Text style={styles.linea}>⏳ Pendientes: {pendientes >= 0 ? pendientes : 0}</Text>
+            <Text style={styles.total}>📌 Total: 15</Text>
           </TouchableOpacity>
         );
       })}
