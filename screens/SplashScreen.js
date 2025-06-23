@@ -14,7 +14,7 @@ export default function SplashScreen() {
       } else {
         navigation.replace('Login');
       }
-    }, 4000); // ⏱️ Aumentado a 4 segundos
+    }, 4000); // espera 4 segundos antes de redirigir
 
     return () => clearTimeout(timeout);
   }, []);
@@ -22,11 +22,10 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/icons/logo.png')} // debe tener fondo transparente ahora
+        source={require('../assets/icons/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.titulo}>Mi vida en palabras</Text>
       <Text style={styles.subtitulo}>Tu historia merece ser contada</Text>
     </View>
   );
@@ -35,25 +34,18 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fce8cc',
+    backgroundColor: '#fce8cc', // color cálido y suave
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 220, // 📏 más grande
+    width: 220,
     height: 220,
     marginBottom: 24,
   },
-  titulo: {
-    fontSize: 32, // 🔠 más grande para personas mayores
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
   subtitulo: {
-    fontSize: 20,
-    color: '#555',
+    fontSize: 28, // letra más grande y clara
+    color: '#333',
     fontStyle: 'italic',
     textAlign: 'center',
     paddingHorizontal: 20,
